@@ -1,0 +1,124 @@
+#include <iostream>
+using namespace std;
+
+// Node structure for non-zero elements
+struct Node {
+    int row;
+    int col;
+    int value;
+    Node* next;
+    
+    Node(int r, int c, int v) {
+        row = r;
+        col = c;
+        value = v;
+        next = nullptr;
+    }
+};
+
+// Sparse Matrix using Linked List
+class SparseMatrix {
+private:
+    int rows, cols;
+    Node* head;
+
+public:
+    SparseMatrix(int r, int c) {
+        rows = r;
+        cols = c;
+        head = nullptr;
+    }
+
+    // Insert a non-zero element
+    void insert(int r, int c, int value) {
+        if (value == 0) return; // Ignore zeros
+
+        Node* newNode = new Node(r, c, value);
+        if (!head || (r < head->row) || (r == head->row && c < head->col)) {
+            newNode->next = head;
+            head = newNode;
+            return;
+        }
+
+        Node* current = head;
+        while (current->next && 
+              (current->next->row < r || (current->next->row == r && current->next->col < c))) {
+            current = current->next;
+        }
+
+        if (current->row == r && current->col == c) {
+            current->value = value; // Update existing
+            delete newNode;
+        } else {
+            newNode->next = current->next;
+            current->next = newNode;
+        }
+    }
+
+    // Display matrix
+    void display() {
+        Node* current = head;
+        for (int i = 0; i < rows; i++) {
+            for (int j = 0; j < cols; j++) {
+                if (current && current->row == i && current->col == j) {
+                    cout << current->value << " ";
+                    current = current->next;
+                } else {
+                    cout << "0 ";
+                }
+            }
+            cout << endl;
+        }
+    }
+
+    // Add two sparse matrices
+    SparseMatrix add(SparseMatrix& other) {
+        if (rows != other.rows || cols != other.cols) {
+            throw runtime_error("Matrix dimensions must match for addition.");
+        }
+
+        SparseMatrix result(rows, cols);
+
+        Node* a = head;
+        Node* b = other.head;
+
+        while (a || b) {
+            if (!b || (a && (a->row < b->row || (a->row == b->row && a->col < b->col)))) {
+                result.insert(a->row, a->col, a->value);
+                a = a->next;
+            } else if (!a || (b && (b->row < a->row || (b->row == a->row && b->col < a->col)))) {
+                result.insert(b->row, b->col, b->value);
+                b = b->next;
+            } else {
+                result.insert(a->row, a->col, a->value + b->value);
+                a = a->next;
+                b = b->next;
+            }
+        }
+        return result;
+    }
+};
+
+int main() {
+    SparseMatrix mat1(3, 3);
+    mat1.insert(0, 0, 5);
+    mat1.insert(1, 2, 8);
+    mat1.insert(2, 1, 3);
+
+    cout << "Matrix 1:" << endl;
+    mat1.display();
+
+    SparseMatrix mat2(3, 3);
+    mat2.insert(0, 0, 2);
+    mat2.insert(1, 1, 7);
+    mat2.insert(2, 1, 1);
+
+    cout << "\nMatrix 2:" << endl;
+    mat2.display();
+
+    SparseMatrix sum = mat1.add(mat2);
+    cout << "\nSum of matrices:" << endl;
+    sum.display();
+
+    return 0;
+}
